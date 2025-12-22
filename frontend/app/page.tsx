@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Navbar from "@/components/layout/Navbar";
 
 const initialNotes = [
   {
@@ -136,16 +137,16 @@ export default function Home() {
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const sortedNotes = [...initialNotes].sort((a, b) => {
-    if (sortOrder === "newest") {
-      return b.timestamp - a.timestamp;
-    } else {
-      return a.timestamp - b.timestamp;
-    }
-  });
+  const sortedNotes = [...initialNotes].sort((a, b) =>
+    sortOrder === "newest"
+      ? b.timestamp - a.timestamp
+      : a.timestamp - b.timestamp
+  );
 
   return (
-    <main className="flex-grow w-full max-w-7xl mx-auto px-6 py-10">
+    <>
+      <Navbar />
+      <main className="flex-grow w-full max-w-7xl mx-auto px-6 py-10">
       <header className="mb-10 text-center">
         <h1 className="font-display text-5xl text-gray-900 mb-3">
           Public Notes
@@ -263,5 +264,6 @@ export default function Home() {
         ))}
       </div>
     </main>
+    </>
   );
 }
