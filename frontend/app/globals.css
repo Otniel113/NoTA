@@ -1,26 +1,45 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: #D4A373;
+  --color-background-light: #FEFAE0;
+  --color-sage-light: #E9EDC9;
+  --color-sage-medium: #CCD5AE;
+  --color-sand-light: #EDDDA8;
+  --color-text-main-light: #333333;
+  --color-card-bg-light: #FEFAE0;
+  --color-sand-tan: #E7C8A0;
+
+  --font-display: var(--font-dm-serif);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+
+  --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  --shadow-inner-light: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+
+/* Custom Utilities */
+.note-content::-webkit-scrollbar {
+  width: 4px;
+}
+.note-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.note-content::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+.fade-bottom {
+  mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-background-light);
+  color: var(--color-text-main-light);
   font-family: Arial, Helvetica, sans-serif;
 }
