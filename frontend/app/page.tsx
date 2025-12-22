@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
+import NoteDetailModal, { Note } from "@/components/ui/NoteDetailModal";
 
 interface NoteData {
   note_id: string;
@@ -18,16 +19,8 @@ interface UserData {
   username: string;
 }
 
-interface DisplayNote {
-  id: string;
-  author: string;
-  title: string;
-  content: React.ReactNode;
-  updatedLabel: string;
-  timestamp: number;
-  bgColor: string;
-  isCode?: boolean;
-}
+// Use the Note interface from the modal component for consistency
+type DisplayNote = Note;
 
 const BG_COLORS = ["bg-sand-tan", "bg-sage-light", "bg-sage-medium", "bg-sand-light"];
 
@@ -36,6 +29,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<DisplayNote | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,14 +63,28 @@ export default function Home() {
             else if (diffDays < 30) updatedLabel = `Updated ${Math.floor(diffDays / 7)} weeks ago`;
             else updatedLabel = `Updated ${Math.floor(diffDays / 30)} months ago`;
 
+            const formatDate = (dateStr: string) => {
+              return new Date(dateStr).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            };
+
             return {
               id: note.note_id,
               author: `@${userMap.get(note.author) || "unknown"}`,
               title: note.title,
               content: note.content, // In a real app, you might parse markdown here
               updatedLabel,
+              createdAt: formatDate(note.created_at),
+              editedAt: note.edited_at ? formatDate(note.edited_at) : null,
               timestamp: date.getTime(),
               bgColor: BG_COLORS[index % BG_COLORS.length],
+              visibility: note.visibility,
+              isOwner: false,
             };
           });
 
@@ -193,7 +201,8 @@ export default function Home() {
             {sortedNotes.map((note) => (
               <article
                 key={note.id}
-                className={`group relative ${note.bgColor} p-6 rounded-2xl shadow-soft hover:shadow-md transition-all duration-300 flex flex-col h-80`}
+                onClick={() => setSelectedNote(note)}
+                className={`group relative ${note.bgColor} p-6 rounded-2xl shadow-soft hover:shadow-md transition-all duration-300 flex flex-col h-80 cursor-pointer`}
               >
                 <div className="flex justify-between items-center mb-3">
                   <span className="font-bold text-lg text-gray-800">
@@ -203,11 +212,7 @@ export default function Home() {
                 <h3 className="font-display text-xl text-gray-800 mb-2 leading-tight">
                   {note.title}
                 </h3>
-                <div
-                  className={`note-content flex-grow overflow-hidden fade-bottom mb-4 ${
-                    note.isCode ? "" : "text-gray-700 text-sm leading-relaxed"
-                  }`}
-                >
+                <div className="note-content flex-grow overflow-hidden fade-bottom mb-4 text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
                   {note.content}
                 </div>
                 <div className="mt-auto flex justify-between items-center border-t border-black/5 pt-4">
@@ -226,6 +231,12 @@ export default function Home() {
           </div>
         </>
       )}
+      
+      <NoteDetailModal 
+        isOpen={!!selectedNote} 
+        onClose={() => setSelectedNote(null)} 
+        note={selectedNote} 
+      />
     </main>
     </>
   );

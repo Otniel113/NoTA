@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import HomeAuthNavbar from "@/components/layout/HomeAuthNavbar";
+import NoteDetailModal, { Note } from "@/components/ui/NoteDetailModal";
 
 interface NoteData {
   note_id: string;
@@ -18,17 +19,7 @@ interface UserData {
   username: string;
 }
 
-interface DisplayNote {
-  id: string;
-  author: string;
-  title: string;
-  content: React.ReactNode;
-  updatedLabel: string;
-  timestamp: number;
-  bgColor: string;
-  visibility: string;
-  isOwner: boolean;
-}
+type DisplayNote = Note;
 
 const BG_COLORS = ["bg-sand-tan", "bg-sage-light", "bg-sage-medium", "bg-sand-light"];
 
@@ -38,6 +29,7 @@ export default function ProfilePage() {
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | "public" | "members">("all");
+  const [selectedNote, setSelectedNote] = useState<DisplayNote | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -75,12 +67,24 @@ export default function ProfilePage() {
             // Normalize visibility for frontend (member -> members)
             const visibility = note.visibility === "member" ? "members" : note.visibility;
 
+            const formatDate = (dateStr: string) => {
+              return new Date(dateStr).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            };
+
             return {
               id: note.note_id,
               author: `@${userMap.get(note.author) || "unknown"}`,
               title: note.title,
               content: note.content,
               updatedLabel,
+              createdAt: formatDate(note.created_at),
+              editedAt: note.edited_at ? formatDate(note.edited_at) : null,
               timestamp: date.getTime(),
               bgColor: BG_COLORS[index % BG_COLORS.length],
               visibility,
@@ -253,7 +257,8 @@ export default function ProfilePage() {
               {sortedNotes.map((note) => (
                 <article
                   key={note.id}
-                  className={`group relative ${note.bgColor} p-6 rounded-2xl shadow-soft hover:shadow-md transition-all duration-300 flex flex-col h-80`}
+                  onClick={() => setSelectedNote(note)}
+                  className={`group relative ${note.bgColor} p-6 rounded-2xl shadow-soft hover:shadow-md transition-all duration-300 flex flex-col h-80 cursor-pointer`}
                 >
                   <div className="flex justify-between items-center mb-3">
                     <span className="font-bold text-lg text-gray-800">
@@ -262,12 +267,14 @@ export default function ProfilePage() {
                     {note.isOwner && (
                       <div className="flex gap-2">
                         <button
+                          onClick={(e) => { e.stopPropagation(); console.log("Edit clicked"); }}
                           className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/40 hover:bg-white/70 text-gray-700 transition-colors cursor-pointer"
                           title="Edit"
                         >
                           <span className="material-icons-round text-lg">edit</span>
                         </button>
                         <button
+                          onClick={(e) => { e.stopPropagation(); console.log("Delete clicked"); }}
                           className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/40 hover:bg-red-100 text-red-500 hover:text-red-600 transition-colors cursor-pointer"
                           title="Delete"
                         >
@@ -281,7 +288,7 @@ export default function ProfilePage() {
                   <h3 className="font-display text-xl text-gray-800 mb-2 leading-tight">
                     {note.title}
                   </h3>
-                  <div className="note-content flex-grow overflow-hidden fade-bottom mb-4 text-gray-700 text-sm leading-relaxed">
+                  <div className="note-content flex-grow overflow-hidden fade-bottom mb-4 text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
                     {note.content}
                   </div>
                   <div className="mt-auto flex justify-between items-center border-t border-black/5 pt-4">
@@ -306,6 +313,12 @@ export default function ProfilePage() {
           </>
         )}
       </main>
+      
+      <NoteDetailModal 
+        isOpen={!!selectedNote} 
+        onClose={() => setSelectedNote(null)} 
+        note={selectedNote} 
+      />
     </>
   );
 }
