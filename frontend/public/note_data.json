@@ -1,0 +1,128 @@
+[
+  {
+    "note_id": "n1",
+    "author": "u1",
+    "title": "Welcome Note",
+    "content": "Welcome to the new workspace! This platform is designed to help you organize your thoughts, collaborate with the team, and manage your daily tasks efficiently. Make sure to check the settings page to customize your profile and notification preferences. We are excited to have you on board as we transition to this new system architecture.",
+    "visibility": "public",
+    "created_at": "2025-12-20T10:00:00Z",
+    "edited_at": "2025-12-21T12:00:00Z"
+  },
+  {
+    "note_id": "n2",
+    "author": "u2",
+    "title": "System Architecture",
+    "content": "The new backend utilizes a microservices approach. Key components include: 1. Authentication Service (OAuth2), 2. Note Management Engine (Node.js/Express), 3. Search Indexer (Elasticsearch), and 4. Real-time Notification Layer (WebSockets).",
+    "visibility": "member",
+    "created_at": "2025-11-02T09:15:00Z",
+    "edited_at": null
+  },
+  {
+    "note_id": "n3",
+    "author": "u3",
+    "title": "Database Optimization",
+    "content": "Tips for indexing: Use B-tree for range queries, GIN for JSONB fields, and always analyze query plans.",
+    "visibility": "public",
+    "created_at": "2025-10-03T14:20:00Z",
+    "edited_at": "2025-10-04T08:30:00Z"
+  },
+  {
+    "note_id": "n4",
+    "author": "u1",
+    "title": "Private Draft",
+    "content": "Sensitive information regarding project X.",
+    "visibility": "member",
+    "created_at": "2025-09-15T11:00:00Z",
+    "edited_at": null
+  },
+  {
+    "note_id": "n5",
+    "author": "u2",
+    "title": "API Documentation",
+    "content": "The simulated API endpoints are now live. You can access /api/notes for a list of all notes and /api/users for user metadata. The authentication header requires a Bearer token. Error handling has been implemented for 404 and 500 status codes, returning structured JSON error objects to help frontend developers debug integration issues effectively.",
+    "visibility": "public",
+    "created_at": "2025-08-06T16:45:00Z",
+    "edited_at": null
+  },
+  {
+    "note_id": "n6",
+    "author": "u3",
+    "title": "Query Performance",
+    "content": "Analyzing slow queries in production.",
+    "visibility": "member",
+    "created_at": "2025-07-07T10:10:00Z",
+    "edited_at": "2025-07-07T11:00:00Z"
+  },
+  {
+    "note_id": "n7",
+    "author": "u1",
+    "title": "Grocery List",
+    "content": "1. Organic Milk (2 cartons)\n2. Large Brown Eggs (1 dozen)\n3. Whole Wheat Bread\n4. Fresh Spinach\n5. Chicken Breast (2 lbs)",
+    "visibility": "member",
+    "created_at": "2025-06-08T07:00:00Z",
+    "edited_at": null
+  },
+  {
+    "note_id": "n8",
+    "author": "u2",
+    "title": "Deployment Strategy",
+    "content": "CI/CD pipeline considerations for Q4.",
+    "visibility": "public",
+    "created_at": "2025-05-09T13:00:00Z",
+    "edited_at": null
+  },
+  {
+    "note_id": "n9",
+    "author": "u3",
+    "title": "Statistical Models",
+    "content": "Applying regression to user activity data to predict future engagement. By analyzing the 'Edited At' timestamps and 'Visibility' flags, we can identify patterns where users tend to make their notes public after several rounds of revision.",
+    "visibility": "public",
+    "created_at": "2025-04-10T15:30:00Z",
+    "edited_at": "2025-04-11T09:00:00Z"
+  },
+  {
+    "note_id": "n10",
+    "author": "u1",
+    "title": "Gym Schedule",
+    "content": "Monday: Legs, Wednesday: Upper Body.",
+    "visibility": "public",
+    "created_at": "2025-03-12T06:45:00Z",
+    "edited_at": null
+  },
+  {
+    "note_id": "n11",
+    "author": "u2",
+    "title": "Unit Testing 101",
+    "content": "Always mock your database calls.",
+    "visibility": "member",
+    "created_at": "2025-02-13T12:00:00Z",
+    "edited_at": null
+  },
+  {
+    "note_id": "n12",
+    "author": "u3",
+    "title": "Data Cleansing",
+    "content": "Removing duplicates from the user table.",
+    "visibility": "member",
+    "created_at": "2025-01-14T14:15:00Z",
+    "edited_at": null
+  },
+  {
+    "note_id": "n13",
+    "author": "u1",
+    "title": "Meeting Minutes",
+    "content": "Attendees: currentuser, dev_guru, data_wizard.\n- Discussed the JSON schema for dummy data.\n- Agreed on 14 initial note entries.\n- Set a deadline for the API simulation by Friday.",
+    "visibility": "public",
+    "created_at": "2024-12-25T10:30:00Z",
+    "edited_at": "2024-12-26T11:00:00Z"
+  },
+  {
+    "note_id": "n14",
+    "author": "u2",
+    "title": "Code Review Checklist",
+    "content": "Readability, efficiency, and security.",
+    "visibility": "public",
+    "created_at": "2025-09-20T17:00:00Z",
+    "edited_at": null
+  }
+]
