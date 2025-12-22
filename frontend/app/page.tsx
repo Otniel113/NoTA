@@ -256,7 +256,7 @@ export default function Home() {
                 title="Public"
               >
                 <span className="material-icons-round text-gray-600 text-sm">
-                  language
+                  public
                 </span>
               </div>
             </div>

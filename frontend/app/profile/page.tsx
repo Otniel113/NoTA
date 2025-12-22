@@ -3,7 +3,7 @@
 import { useState } from "react";
 import HomeAuthNavbar from "@/components/layout/HomeAuthNavbar";
 
-const homeAuthNotes = [
+const profileNotes = [
   {
     id: 101,
     author: "@currentuser",
@@ -27,66 +27,6 @@ const homeAuthNotes = [
     isOwner: true,
   },
   {
-    id: 1,
-    author: "@creative_soul",
-    title: "Art Supplies Wishlist",
-    content: (
-      <ul className="list-disc pl-4 space-y-1">
-        <li>Winsor & Newton Watercolor Set</li>
-        <li>Arches Cold Press Paper Block</li>
-        <li>Sable Hair Brushes (Size 4, 8)</li>
-        <li>Masking Fluid</li>
-        <li>Ceramic Palette</li>
-      </ul>
-    ),
-    updatedLabel: "Updated yesterday",
-    timestamp: new Date().setDate(new Date().getDate() - 1),
-    bgColor: "bg-sage-light",
-    visibility: "public",
-    isOwner: false,
-  },
-  {
-    id: 6,
-    author: "@writer_j",
-    title: "Inspiration Quote",
-    content: (
-      <>
-        <p>
-          &quot;Start writing, no matter what. The water does not flow until the
-          faucet is turned on.&quot;
-        </p>
-        <p className="mt-2">- Louis L&apos;Amour</p>
-      </>
-    ),
-    updatedLabel: "Updated 2 days ago",
-    timestamp: new Date().setDate(new Date().getDate() - 2),
-    bgColor: "bg-sand-tan",
-    visibility: "members",
-    isOwner: false,
-  },
-  {
-    id: 2,
-    author: "@sarah_m",
-    title: "Public Announcement: Q3",
-    content: (
-      <>
-        <p className="mb-2">
-          <strong>To all stakeholders:</strong>
-        </p>
-        <p>
-          We are pleased to announce that our community outreach program has
-          expanded to 3 new districts. Volunteers are welcome to join our
-          Saturday meetups at the central park.
-        </p>
-      </>
-    ),
-    updatedLabel: "Updated 1 week ago",
-    timestamp: new Date().setDate(new Date().getDate() - 7),
-    bgColor: "bg-sage-medium",
-    visibility: "public",
-    isOwner: false,
-  },
-  {
     id: 102,
     author: "@currentuser",
     title: "Project Ideas 2025",
@@ -107,12 +47,12 @@ const homeAuthNotes = [
   },
 ];
 
-export default function HomeAuthPage() {
+export default function ProfilePage() {
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | "public" | "members">("all");
 
-  const filteredNotes = homeAuthNotes.filter((note) => {
+  const filteredNotes = profileNotes.filter((note) => {
     if (filter === "all") return true;
     return note.visibility === filter;
   });
@@ -140,13 +80,10 @@ export default function HomeAuthPage() {
       <main className="flex-grow w-full max-w-7xl mx-auto px-6 py-10">
         <header className="mb-10 text-center">
           <h1 className="font-display text-5xl text-gray-900 mb-3">
-            All Notes
+            Hello, @currentuser
           </h1>
           <p className="text-gray-600 text-lg font-light">
-            A space for your thoughts, ideas, and reflections from NoTA.
-          </p>
-          <p className="text-gray-600 text-lg font-light">
-            You can now see all notes for public and members only.
+            Here are all the notes you have created.
           </p>
         </header>
 

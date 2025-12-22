@@ -3,9 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import AddNoteModal from "@/components/ui/AddNoteModal";
 
 export default function HomeAuthNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAddNoteModalOpen, setIsAddNoteModalOpen] = useState(false);
   const router = useRouter();
 
   const handleLogout = () => {
@@ -56,14 +58,19 @@ export default function HomeAuthNavbar() {
 
         {/* Desktop Buttons */}
         <div className="hidden md:flex items-center gap-3 w-full md:w-auto justify-end">
-          <button className="bg-primary hover:bg-[#c08d5f] text-white px-5 py-2.5 rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2 font-medium text-sm cursor-pointer">
+          <button 
+            onClick={() => setIsAddNoteModalOpen(true)}
+            className="bg-primary hover:bg-[#c08d5f] text-white px-5 py-2.5 rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2 font-medium text-sm cursor-pointer"
+          >
             <span className="material-icons-round text-lg">add</span>
             Add New Note
           </button>
-          <button className="bg-background-light hover:bg-white text-gray-700 px-5 py-2.5 rounded-full shadow-sm transition-all flex items-center gap-2 font-medium text-sm cursor-pointer">
-            <span className="material-icons-round text-lg">dashboard</span>
-            My Dashboard
-          </button>
+          <Link href="/profile">
+            <button className="bg-background-light hover:bg-white text-gray-700 px-5 py-2.5 rounded-full shadow-sm transition-all flex items-center gap-2 font-medium text-sm cursor-pointer">
+              <span className="material-icons-round text-lg">person</span>
+              My Profile
+            </button>
+          </Link>
           <button
             onClick={handleLogout}
             className="bg-background-light hover:bg-white text-gray-700 px-5 py-2.5 rounded-full shadow-sm transition-all flex items-center gap-2 font-medium text-sm cursor-pointer"
@@ -76,10 +83,12 @@ export default function HomeAuthNavbar() {
         {/* Mobile Menu (Collapsible) */}
         {isMenuOpen && (
           <div className="w-full md:hidden flex flex-col gap-3 pt-2 animate-in slide-in-from-top-2 duration-200">
-            <button className="w-full bg-background-light hover:bg-white text-gray-700 px-5 py-3 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 font-medium text-sm cursor-pointer">
-              <span className="material-icons-round text-lg">dashboard</span>
-              My Dashboard
-            </button>
+            <Link href="/profile" className="w-full">
+              <button className="w-full bg-background-light hover:bg-white text-gray-700 px-5 py-3 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 font-medium text-sm cursor-pointer">
+                <span className="material-icons-round text-lg">person</span>
+                My Profile
+              </button>
+            </Link>
             <button
               onClick={handleLogout}
               className="w-full bg-background-light hover:bg-white text-gray-700 px-5 py-3 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 font-medium text-sm cursor-pointer"
@@ -90,6 +99,17 @@ export default function HomeAuthNavbar() {
           </div>
         )}
       </div>
+
+      {/* Floating Action Button for Mobile */}
+      <button
+        onClick={() => setIsAddNoteModalOpen(true)}
+        className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-[#c08d5f] transition-all z-50 cursor-pointer"
+        aria-label="Add note"
+      >
+        <span className="material-icons-round text-3xl">add</span>
+      </button>
+
+      <AddNoteModal isOpen={isAddNoteModalOpen} onClose={() => setIsAddNoteModalOpen(false)} />
     </nav>
   );
 }
