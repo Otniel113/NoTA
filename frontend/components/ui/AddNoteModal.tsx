@@ -1,16 +1,35 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Note } from "./NoteDetailModal";
 
 interface AddNoteModalProps {
   isOpen: boolean;
   onClose: () => void;
+  noteToEdit?: Note | null;
 }
 
-export default function AddNoteModal({ isOpen, onClose }: AddNoteModalProps) {
+export default function AddNoteModal({ isOpen, onClose, noteToEdit }: AddNoteModalProps) {
   const [visibility, setVisibility] = useState<"members" | "public">("members");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+
+  // Initialize state when modal opens or noteToEdit changes
+  useEffect(() => {
+    if (isOpen) {
+      if (noteToEdit) {
+        setVisibility(noteToEdit.visibility === "public" ? "public" : "members");
+        setTitle(noteToEdit.title);
+        // Assuming content is string, if it's ReactNode we might need adjustment but for now assuming string based on usage
+        setContent(typeof noteToEdit.content === 'string' ? noteToEdit.content : String(noteToEdit.content));
+      } else {
+        // Reset for new note
+        setVisibility("members");
+        setTitle("");
+        setContent("");
+      }
+    }
+  }, [isOpen, noteToEdit]);
 
   // Close on escape key
   useEffect(() => {
@@ -38,7 +57,9 @@ export default function AddNoteModal({ isOpen, onClose }: AddNoteModalProps) {
         <div className="flex items-start justify-between p-6 pb-2 border-b border-transparent shrink-0">
           <div className="flex flex-col gap-0.5">
             <span className="text-[#5C4033] text-lg font-bold leading-tight">@currentuser</span>
-            <span className="text-[#8D7B68] text-xs">New Note • Draft</span>
+            <span className="text-[#8D7B68] text-xs">
+              {noteToEdit ? "Edit Note" : "New Note • Draft"}
+            </span>
           </div>
           <button 
             onClick={onClose}
@@ -116,20 +137,18 @@ export default function AddNoteModal({ isOpen, onClose }: AddNoteModalProps) {
         <div className="p-6 pt-4 border-t border-[#D4A373]/5 flex flex-col sm:flex-row sm:items-center justify-end gap-3 bg-white/30 rounded-b-xl shrink-0">
           <button 
             onClick={onClose}
-            className="flex flex-1 sm:flex-none items-center justify-center h-12 sm:h-10 px-6 rounded-lg text-[#5C4033] hover:bg-[#D4A373]/10 border border-transparent transition-all font-semibold text-base sm:text-sm cursor-pointer"
+            className="flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-[#8D7B68] font-bold text-sm hover:bg-[#D4A373]/10 transition-colors"
           >
             Cancel
           </button>
           <button 
-            onClick={() => {
-                // Handle Post logic here
-                console.log({ title, content, visibility });
-                onClose();
-            }}
-            className="flex flex-1 sm:flex-none items-center justify-center gap-2 h-12 sm:h-10 px-6 rounded-lg bg-[#D4A373] hover:bg-[#c29363] text-white shadow-lg shadow-[#D4A373]/20 transition-all font-bold text-base sm:text-sm tracking-wide group cursor-pointer"
+            onClick={onClose}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-[#D4A373] hover:bg-[#c29363] text-white shadow-lg shadow-[#D4A373]/20 transition-all font-bold text-sm tracking-wide group"
           >
-            <span className="material-icons-round text-[20px]">send</span>
-            Post
+            <span className="material-icons-round text-[20px] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform">
+              {noteToEdit ? "save" : "send"}
+            </span>
+            {noteToEdit ? "Save" : "Post Note"}
           </button>
         </div>
       </div>

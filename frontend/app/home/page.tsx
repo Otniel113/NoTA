@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import HomeAuthNavbar from "@/components/layout/HomeAuthNavbar";
 import NoteDetailModal, { Note } from "@/components/ui/NoteDetailModal";
+import AddNoteModal from "@/components/ui/AddNoteModal";
+import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
 
 interface NoteData {
   note_id: string;
@@ -30,6 +32,8 @@ export default function HomeAuthPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | "public" | "members">("all");
   const [selectedNote, setSelectedNote] = useState<DisplayNote | null>(null);
+  const [editingNote, setEditingNote] = useState<DisplayNote | null>(null);
+  const [deletingNote, setDeletingNote] = useState<DisplayNote | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -123,6 +127,27 @@ export default function HomeAuthPage() {
       default:
         return "public";
     }
+  };
+
+  const handleEdit = (note: DisplayNote) => {
+    setEditingNote(note);
+    // If we are editing from detail modal, we might want to close it or keep it open.
+    // User requirement: "direct to the last visited page".
+    // This implies closing the detail modal if it's open.
+    setSelectedNote(null); 
+  };
+
+  const handleDelete = (note: DisplayNote) => {
+    setDeletingNote(note);
+    // Keep detail modal open if it was open, as per requirement "if detail note, then return to detail note" (on cancel)
+  };
+
+  const confirmDelete = () => {
+    // Perform delete logic here (mock)
+    console.log("Deleted note:", deletingNote?.id);
+    setDeletingNote(null);
+    setSelectedNote(null); // Close detail modal if open
+    // In a real app, we would refresh the list here
   };
 
   return (
@@ -270,14 +295,14 @@ export default function HomeAuthPage() {
                     {note.isOwner && (
                       <div className="flex gap-2">
                         <button
-                          onClick={(e) => { e.stopPropagation(); console.log("Edit clicked"); }}
+                          onClick={(e) => { e.stopPropagation(); handleEdit(note); }}
                           className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/40 hover:bg-white/70 text-gray-700 transition-colors cursor-pointer"
                           title="Edit"
                         >
                           <span className="material-icons-round text-lg">edit</span>
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); console.log("Delete clicked"); }}
+                          onClick={(e) => { e.stopPropagation(); handleDelete(note); }}
                           className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/40 hover:bg-red-100 text-red-500 hover:text-red-600 transition-colors cursor-pointer"
                           title="Delete"
                         >
@@ -321,6 +346,20 @@ export default function HomeAuthPage() {
         isOpen={!!selectedNote} 
         onClose={() => setSelectedNote(null)} 
         note={selectedNote} 
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+
+      <AddNoteModal
+        isOpen={!!editingNote}
+        onClose={() => setEditingNote(null)}
+        noteToEdit={editingNote}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={!!deletingNote}
+        onClose={() => setDeletingNote(null)}
+        onConfirm={confirmDelete}
       />
     </>
   );

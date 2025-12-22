@@ -20,9 +20,11 @@ interface NoteDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   note: Note | null;
+  onEdit?: (note: Note) => void;
+  onDelete?: (note: Note) => void;
 }
 
-export default function NoteDetailModal({ isOpen, onClose, note }: NoteDetailModalProps) {
+export default function NoteDetailModal({ isOpen, onClose, note, onEdit, onDelete }: NoteDetailModalProps) {
   // Close on escape key
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -95,14 +97,14 @@ export default function NoteDetailModal({ isOpen, onClose, note }: NoteDetailMod
         {isOwnNote && (
           <div className="p-6 pt-4 border-t border-[#D4A373]/5 flex flex-col sm:flex-row sm:items-center justify-end gap-3 bg-white/30 rounded-b-xl">
             <button 
-                onClick={() => console.log("Edit clicked")}
+                onClick={() => onEdit && onEdit(note)}
                 className="flex flex-1 sm:flex-none items-center justify-center gap-2 h-10 px-6 rounded-lg bg-[#D4A373] hover:bg-[#c29363] text-white shadow-lg shadow-[#D4A373]/20 transition-all font-bold text-sm tracking-wide group cursor-pointer"
             >
               <span className="material-icons-round text-[20px] group-hover:scale-110 transition-transform">edit</span>
               Edit
             </button>
             <button 
-                onClick={() => console.log("Delete clicked")}
+                onClick={() => onDelete && onDelete(note)}
                 className="flex flex-1 sm:flex-none items-center justify-center gap-2 h-10 px-4 rounded-lg text-red-700 hover:bg-red-50 hover:text-red-800 border border-transparent hover:border-red-200 transition-all font-semibold text-sm group cursor-pointer"
             >
               <span className="material-icons-round text-[20px] group-hover:scale-110 transition-transform">delete</span>
