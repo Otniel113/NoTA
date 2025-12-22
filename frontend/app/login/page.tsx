@@ -12,7 +12,7 @@ export default function LoginPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Simple routing as requested
-    router.push("/");
+    router.push("/home");
   };
 
   return (
