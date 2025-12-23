@@ -16,6 +16,11 @@ NoTA is a simple sticky note full-stack application designed for a coding interv
 - **Database:** MongoDB (via Mongoose)
 - **Authentication:** JWT (JSON Web Tokens)
 
+## 🌐 Deployment
+
+- **Frontend:** [https://no-ta.vercel.app/](https://no-ta.vercel.app/) (Deployed on Vercel)
+- **Backend:** [https://nota-api-jzlr.onrender.com/](https://nota-api-jzlr.onrender.com/) (Deployed on Render)
+
 ## ✨ Features
 
 ### Frontend
