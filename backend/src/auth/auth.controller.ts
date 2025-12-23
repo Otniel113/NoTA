@@ -1,12 +1,16 @@
 import { Body, Controller, Get, Headers, HttpCode, HttpStatus, Post, Request, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { NotesService } from '../notes/notes.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private notesService: NotesService,
+  ) {}
 
   @Post('register')
   register(@Body() registerDto: RegisterDto) {
@@ -34,5 +38,11 @@ export class AuthController {
   @Get('profile')
   getProfile(@Request() req) {
     return req.user;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('profile/notes')
+  async getProfileNotes(@Request() req) {
+    return this.notesService.findAllByAuthor(req.user.userId);
   }
 }

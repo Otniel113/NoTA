@@ -6,12 +6,14 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
+import { NotesModule } from '../notes/notes.module';
 import { JwtStrategy } from './jwt.strategy';
 import { BlacklistedToken, BlacklistedTokenSchema } from './schemas/blacklisted-token.schema';
 
 @Module({
   imports: [
     UsersModule,
+    NotesModule,
     PassportModule,
     MongooseModule.forFeature([
       { name: BlacklistedToken.name, schema: BlacklistedTokenSchema },
