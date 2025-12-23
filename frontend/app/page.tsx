@@ -44,7 +44,7 @@ export default function Home() {
 
   const fetchData = async (query = searchQuery) => {
     try {
-      const API_URL = process.env.API_URL || "http://localhost:5000";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       const url = new URL(`${API_URL}/notes`);
       if (query) {
         url.searchParams.append("search", query);

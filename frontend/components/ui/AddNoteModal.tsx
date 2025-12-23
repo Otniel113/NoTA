@@ -47,7 +47,7 @@ export default function AddNoteModal({ isOpen, onClose, noteToEdit, onSuccess }:
     setError("");
 
     try {
-      const API_URL = process.env.API_URL || "http://localhost:5000";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       const url = noteToEdit 
         ? `${API_URL}/notes/${noteToEdit.id}`
         : `${API_URL}/notes`;

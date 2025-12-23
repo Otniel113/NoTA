@@ -39,7 +39,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
     setIsLoading(true);
 
     try {
-      const API_URL = process.env.API_URL || "http://localhost:5000";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       const response = await fetch(`${API_URL}/auth/change-password`, {
         method: "POST",
         headers: {

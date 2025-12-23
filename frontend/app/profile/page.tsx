@@ -44,7 +44,7 @@ export default function ProfilePage() {
 
   const fetchData = async (query = searchQuery) => {
     try {
-      const API_URL = process.env.API_URL || "http://localhost:5000";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       const url = new URL(`${API_URL}/auth/profile/notes`);
       if (query) {
         url.searchParams.append("search", query);
@@ -167,7 +167,7 @@ export default function ProfilePage() {
     if (!deletingNote) return;
     
     try {
-      const API_URL = process.env.API_URL || "http://localhost:5000";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       const response = await fetch(`${API_URL}/notes/${deletingNote.id}`, {
         method: "DELETE",
         headers: {
