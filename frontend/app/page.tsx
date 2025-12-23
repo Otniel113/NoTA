@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import NoteDetailModal, { Note } from "@/components/ui/NoteDetailModal";
+import { useAuth } from "@/context/AuthContext";
 
 interface NoteData {
   note_id: string;
@@ -25,32 +27,39 @@ type DisplayNote = Note;
 const BG_COLORS = ["bg-sand-tan", "bg-sage-light", "bg-sage-medium", "bg-sand-light"];
 
 export default function Home() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const [notes, setNotes] = useState<DisplayNote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<DisplayNote | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 800));
+    if (!authLoading && isAuthenticated) {
+      router.push("/home");
+    }
+  }, [isAuthenticated, authLoading, router]);
 
-        const [notesRes, usersRes] = await Promise.all([
-          fetch("/note_data.json"),
-          fetch("/user_data.json"),
-        ]);
+  const fetchData = async (query = searchQuery) => {
+    try {
+      const API_URL = process.env.API_URL || "http://localhost:5000";
+      const url = new URL(`${API_URL}/notes`);
+      if (query) {
+        url.searchParams.append("search", query);
+      }
 
-        const notesData: NoteData[] = await notesRes.json();
-        const usersData: UserData[] = await usersRes.json();
+      const response = await fetch(url.toString());
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch notes");
+      }
 
-        // Create a map for quick user lookup
-        const userMap = new Map(usersData.map((u) => [u.user_id, u.username]));
+      const notesData = await response.json();
 
-        const processedNotes: DisplayNote[] = notesData
-          .filter((note) => note.visibility === "public") // Only show public notes
-          .map((note, index) => {
+      const processedNotes: DisplayNote[] = notesData
+        .map((note: any, index: number) => {
             const date = new Date(note.edited_at || note.created_at);
             const now = new Date();
             const diffTime = Math.abs(now.getTime() - date.getTime());
@@ -74,10 +83,10 @@ export default function Home() {
             };
 
             return {
-              id: note.note_id,
-              author: `@${userMap.get(note.author) || "unknown"}`,
+              id: note._id,
+              author: `@${note.author?.username || "unknown"}`,
               title: note.title,
-              content: note.content, // In a real app, you might parse markdown here
+              content: note.content,
               updatedLabel,
               createdAt: formatDate(note.created_at),
               editedAt: note.edited_at ? formatDate(note.edited_at) : null,
@@ -88,16 +97,21 @@ export default function Home() {
             };
           });
 
-        setNotes(processedNotes);
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      setNotes(processedNotes);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchData();
-  }, []);
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchData(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   const sortedNotes = [...notes].sort((a, b) =>
     sortOrder === "newest"
@@ -105,9 +119,17 @@ export default function Home() {
       : a.timestamp - b.timestamp
   );
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background-light">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <>
-      <Navbar />
+      <Navbar onSearch={setSearchQuery} />
       <main className="flex-grow w-full max-w-7xl mx-auto px-6 py-10">
       <header className="mb-10 text-center">
         <h1 className="font-display text-5xl text-gray-900 mb-3">

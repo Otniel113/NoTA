@@ -4,14 +4,21 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AddNoteModal from "@/components/ui/AddNoteModal";
+import { useAuth } from "@/context/AuthContext";
 
-export default function HomeAuthNavbar() {
+interface HomeAuthNavbarProps {
+  onNoteAdded?: () => void;
+  onSearch?: (query: string) => void;
+}
+
+export default function HomeAuthNavbar({ onNoteAdded, onSearch }: HomeAuthNavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAddNoteModalOpen, setIsAddNoteModalOpen] = useState(false);
   const router = useRouter();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    router.push("/");
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
@@ -50,8 +57,9 @@ export default function HomeAuthNavbar() {
             </div>
             <input
               className="block w-full pl-11 pr-4 py-3 rounded-full border-none bg-background-light text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-primary/50 shadow-inner-light transition-all outline-none"
-              placeholder="Search my notes..."
+              placeholder="Search all notes..."
               type="text"
+              onChange={(e) => onSearch && onSearch(e.target.value)}
             />
           </div>
         </div>
@@ -109,7 +117,11 @@ export default function HomeAuthNavbar() {
         <span className="material-icons-round text-3xl">add</span>
       </button>
 
-      <AddNoteModal isOpen={isAddNoteModalOpen} onClose={() => setIsAddNoteModalOpen(false)} />
+      <AddNoteModal 
+        isOpen={isAddNoteModalOpen} 
+        onClose={() => setIsAddNoteModalOpen(false)} 
+        onSuccess={onNoteAdded}
+      />
     </nav>
   );
 }

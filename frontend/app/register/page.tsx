@@ -1,17 +1,48 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthNavbar from "@/components/layout/AuthNavbar";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import { useAuth } from "@/context/AuthContext";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { register } = useAuth();
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/login");
+    setError("");
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { confirmPassword, ...registerData } = formData;
+      await register(registerData);
+      // Redirect is handled in register function
+    } catch (err: any) {
+      setError(err.message || "Failed to register");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -29,6 +60,12 @@ export default function RegisterPage() {
               </p>
             </header>
 
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center">
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <Input
                 label="Username"
@@ -36,6 +73,9 @@ export default function RegisterPage() {
                 placeholder="Choose a unique username"
                 required
                 type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
               />
               <Input
                 label="Email Address"
@@ -43,6 +83,9 @@ export default function RegisterPage() {
                 placeholder="you@example.com"
                 required
                 type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
               />
               <Input
                 label="Password"
@@ -50,6 +93,9 @@ export default function RegisterPage() {
                 placeholder="Create a strong password"
                 required
                 type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
               />
               <Input
                 label="Confirm Password"
@@ -57,10 +103,13 @@ export default function RegisterPage() {
                 placeholder="Repeat your password"
                 required
                 type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
               />
 
-              <Button type="submit" fullWidth>
-                Create Account
+              <Button type="submit" fullWidth disabled={loading}>
+                {loading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
           </div>

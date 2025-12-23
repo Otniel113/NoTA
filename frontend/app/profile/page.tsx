@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import HomeAuthNavbar from "@/components/layout/HomeAuthNavbar";
 import NoteDetailModal, { Note } from "@/components/ui/NoteDetailModal";
 import AddNoteModal from "@/components/ui/AddNoteModal";
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
+import ChangePasswordModal from "@/components/ui/ChangePasswordModal";
+import { useAuth } from "@/context/AuthContext";
 
 interface NoteData {
   note_id: string;
@@ -26,6 +29,8 @@ type DisplayNote = Note;
 const BG_COLORS = ["bg-sand-tan", "bg-sage-light", "bg-sage-medium", "bg-sand-light"];
 
 export default function ProfilePage() {
+  const { isAuthenticated, isLoading: authLoading, user, token } = useAuth();
+  const router = useRouter();
   const [notes, setNotes] = useState<DisplayNote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
@@ -34,78 +39,94 @@ export default function ProfilePage() {
   const [selectedNote, setSelectedNote] = useState<DisplayNote | null>(null);
   const [editingNote, setEditingNote] = useState<DisplayNote | null>(null);
   const [deletingNote, setDeletingNote] = useState<DisplayNote | null>(null);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const fetchData = async (query = searchQuery) => {
+    try {
+      const API_URL = process.env.API_URL || "http://localhost:5000";
+      const url = new URL(`${API_URL}/auth/profile/notes`);
+      if (query) {
+        url.searchParams.append("search", query);
+      }
+
+      const response = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch notes");
+      }
+
+      const notesData = await response.json();
+
+      const processedNotes: DisplayNote[] = notesData
+        .map((note: any, index: number) => {
+          const date = new Date(note.edited_at || note.created_at);
+          const now = new Date();
+          const diffTime = Math.abs(now.getTime() - date.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          let updatedLabel = "";
+          if (diffDays <= 1) updatedLabel = "Updated today";
+          else if (diffDays === 2) updatedLabel = "Updated yesterday";
+          else if (diffDays < 7) updatedLabel = `Updated ${diffDays} days ago`;
+          else if (diffDays < 30) updatedLabel = `Updated ${Math.floor(diffDays / 7)} weeks ago`;
+          else updatedLabel = `Updated ${Math.floor(diffDays / 30)} months ago`;
+
+          // Normalize visibility for frontend (member -> members)
+          const visibility = note.visibility === "member" ? "members" : note.visibility;
+
+          const formatDate = (dateStr: string) => {
+            return new Date(dateStr).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          };
+
+          return {
+            id: note._id,
+            author: `@${note.author?.username || "unknown"}`,
+            title: note.title,
+            content: note.content,
+            updatedLabel,
+            createdAt: formatDate(note.created_at),
+            editedAt: note.edited_at ? formatDate(note.edited_at) : null,
+            timestamp: date.getTime(),
+            bgColor: BG_COLORS[index % BG_COLORS.length],
+            visibility: visibility,
+            isOwner: true, // Always owner in profile
+          };
+        });
+
+      setNotes(processedNotes);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 800));
+    if (!authLoading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isAuthenticated, authLoading, router]);
 
-        const [notesRes, usersRes] = await Promise.all([
-          fetch("/note_data.json"),
-          fetch("/user_data.json"),
-        ]);
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    const delayDebounceFn = setTimeout(() => {
+      fetchData(searchQuery);
+    }, 500);
 
-        const notesData: NoteData[] = await notesRes.json();
-        const usersData: UserData[] = await usersRes.json();
-
-        // Create a map for quick user lookup
-        const userMap = new Map(usersData.map((u) => [u.user_id, u.username]));
-        const currentUserId = "u1"; // Hardcoded current user
-
-        const processedNotes: DisplayNote[] = notesData
-          .filter((note) => note.author === currentUserId) // Only show current user's notes
-          .map((note, index) => {
-            const date = new Date(note.edited_at || note.created_at);
-            const now = new Date();
-            const diffTime = Math.abs(now.getTime() - date.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
-            let updatedLabel = "";
-            if (diffDays <= 1) updatedLabel = "Updated today";
-            else if (diffDays === 2) updatedLabel = "Updated yesterday";
-            else if (diffDays < 7) updatedLabel = `Updated ${diffDays} days ago`;
-            else if (diffDays < 30) updatedLabel = `Updated ${Math.floor(diffDays / 7)} weeks ago`;
-            else updatedLabel = `Updated ${Math.floor(diffDays / 30)} months ago`;
-
-            // Normalize visibility for frontend (member -> members)
-            const visibility = note.visibility === "member" ? "members" : note.visibility;
-
-            const formatDate = (dateStr: string) => {
-              return new Date(dateStr).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              });
-            };
-
-            return {
-              id: note.note_id,
-              author: `@${userMap.get(note.author) || "unknown"}`,
-              title: note.title,
-              content: note.content,
-              updatedLabel,
-              createdAt: formatDate(note.created_at),
-              editedAt: note.edited_at ? formatDate(note.edited_at) : null,
-              timestamp: date.getTime(),
-              bgColor: BG_COLORS[index % BG_COLORS.length],
-              visibility,
-              isOwner: true,
-            };
-          });
-
-        setNotes(processedNotes);
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+    return () => clearTimeout(delayDebounceFn);
+  }, [isAuthenticated, token, searchQuery]);
 
   const filteredNotes = notes.filter((note) => {
     if (filter === "all") return true;
@@ -142,25 +163,57 @@ export default function ProfilePage() {
     // Keep detail modal open if it was open, as per requirement "if detail note, then return to detail note" (on cancel)
   };
 
-  const confirmDelete = () => {
-    // Perform delete logic here (mock)
-    console.log("Deleted note:", deletingNote?.id);
+  const confirmDelete = async () => {
+    if (!deletingNote) return;
+    
+    try {
+      const API_URL = process.env.API_URL || "http://localhost:5000";
+      const response = await fetch(`${API_URL}/notes/${deletingNote.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete note");
+      }
+
+      fetchData();
+    } catch (error) {
+      console.error("Failed to delete note", error);
+    }
+
     setDeletingNote(null);
     setSelectedNote(null); // Close detail modal if open
-    // In a real app, we would refresh the list here
   };
+
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background-light">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <>
-      <HomeAuthNavbar />
+      <HomeAuthNavbar onNoteAdded={fetchData} onSearch={setSearchQuery} />
       <main className="flex-grow w-full max-w-7xl mx-auto px-6 py-10">
         <header className="mb-10 text-center">
           <h1 className="font-display text-5xl text-gray-900 mb-3">
-            Hello, @currentuser
+            Hello, @{user?.username}
           </h1>
-          <p className="text-gray-600 text-lg font-light">
+          <p className="text-gray-600 text-lg font-light mb-6">
             Here are all the notes you have created.
           </p>
+          <button
+            onClick={() => setIsChangePasswordModalOpen(true)}
+            className="bg-white border border-[#D4A373]/30 hover:border-[#D4A373] text-[#5C4033] hover:bg-[#FEFAE0] px-6 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 font-bold text-sm mx-auto group"
+          >
+            <span className="material-icons-round text-lg text-[#D4A373] group-hover:text-[#5C4033] transition-colors">lock_reset</span>
+            Change Password
+          </button>
         </header>
 
         {isLoading ? (
@@ -351,12 +404,17 @@ export default function ProfilePage() {
         isOpen={!!editingNote}
         onClose={() => setEditingNote(null)}
         noteToEdit={editingNote}
+        onSuccess={fetchData}
       />
 
       <DeleteConfirmationModal
         isOpen={!!deletingNote}
         onClose={() => setDeletingNote(null)}
         onConfirm={confirmDelete}
+      />
+      <ChangePasswordModal
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
       />
     </>
   );

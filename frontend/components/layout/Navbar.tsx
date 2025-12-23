@@ -3,7 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 
-export default function Navbar() {
+interface NavbarProps {
+  onSearch?: (query: string) => void;
+}
+
+export default function Navbar({ onSearch }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -44,6 +48,7 @@ export default function Navbar() {
               className="block w-full pl-11 pr-4 py-3 rounded-full border-none bg-background-light text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-primary/50 shadow-inner-light transition-all outline-none"
               placeholder="Search public notes..."
               type="text"
+              onChange={(e) => onSearch && onSearch(e.target.value)}
             />
           </div>
         </div>
