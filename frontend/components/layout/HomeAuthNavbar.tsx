@@ -8,9 +8,10 @@ import { useAuth } from "@/context/AuthContext";
 
 interface HomeAuthNavbarProps {
   onNoteAdded?: () => void;
+  onSearch?: (query: string) => void;
 }
 
-export default function HomeAuthNavbar({ onNoteAdded }: HomeAuthNavbarProps) {
+export default function HomeAuthNavbar({ onNoteAdded, onSearch }: HomeAuthNavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAddNoteModalOpen, setIsAddNoteModalOpen] = useState(false);
   const router = useRouter();
@@ -56,8 +57,9 @@ export default function HomeAuthNavbar({ onNoteAdded }: HomeAuthNavbarProps) {
             </div>
             <input
               className="block w-full pl-11 pr-4 py-3 rounded-full border-none bg-background-light text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-primary/50 shadow-inner-light transition-all outline-none"
-              placeholder="Search my notes..."
+              placeholder="Search all notes..."
               type="text"
+              onChange={(e) => onSearch && onSearch(e.target.value)}
             />
           </div>
         </div>

@@ -38,11 +38,17 @@ export default function HomeAuthPage() {
   const [selectedNote, setSelectedNote] = useState<DisplayNote | null>(null);
   const [editingNote, setEditingNote] = useState<DisplayNote | null>(null);
   const [deletingNote, setDeletingNote] = useState<DisplayNote | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchData = async () => {
+  const fetchData = async (query = searchQuery) => {
     try {
       const API_URL = process.env.API_URL || "http://localhost:5000";
-      const response = await fetch(`${API_URL}/notes`, {
+      const url = new URL(`${API_URL}/notes`);
+      if (query) {
+        url.searchParams.append("search", query);
+      }
+
+      const response = await fetch(url.toString(), {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -112,8 +118,13 @@ export default function HomeAuthPage() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    fetchData();
-  }, [isAuthenticated, token, user]);
+    
+    const delayDebounceFn = setTimeout(() => {
+      fetchData(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [isAuthenticated, token, user, searchQuery]);
 
   const filteredNotes = notes.filter((note) => {
     if (filter === "all") return true;
@@ -185,7 +196,7 @@ export default function HomeAuthPage() {
 
   return (
     <>
-      <HomeAuthNavbar onNoteAdded={fetchData} />
+      <HomeAuthNavbar onNoteAdded={() => fetchData()} onSearch={setSearchQuery} />
       <main className="flex-grow w-full max-w-7xl mx-auto px-6 py-10">
         <header className="mb-10 text-center">
           <h1 className="font-display text-5xl text-gray-900 mb-3">

@@ -34,6 +34,7 @@ export default function Home() {
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<DisplayNote | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -41,20 +42,24 @@ export default function Home() {
     }
   }, [isAuthenticated, authLoading, router]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const API_URL = process.env.API_URL || "http://localhost:5000";
-        const response = await fetch(`${API_URL}/notes`);
-        
-        if (!response.ok) {
-          throw new Error("Failed to fetch notes");
-        }
+  const fetchData = async (query = searchQuery) => {
+    try {
+      const API_URL = process.env.API_URL || "http://localhost:5000";
+      const url = new URL(`${API_URL}/notes`);
+      if (query) {
+        url.searchParams.append("search", query);
+      }
 
-        const notesData = await response.json();
+      const response = await fetch(url.toString());
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch notes");
+      }
 
-        const processedNotes: DisplayNote[] = notesData
-          .map((note: any, index: number) => {
+      const notesData = await response.json();
+
+      const processedNotes: DisplayNote[] = notesData
+        .map((note: any, index: number) => {
             const date = new Date(note.edited_at || note.created_at);
             const now = new Date();
             const diffTime = Math.abs(now.getTime() - date.getTime());
@@ -92,16 +97,21 @@ export default function Home() {
             };
           });
 
-        setNotes(processedNotes);
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      setNotes(processedNotes);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchData();
-  }, []);
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchData(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   const sortedNotes = [...notes].sort((a, b) =>
     sortOrder === "newest"
@@ -119,7 +129,7 @@ export default function Home() {
 
   return (
     <>
-      <Navbar />
+      <Navbar onSearch={setSearchQuery} />
       <main className="flex-grow w-full max-w-7xl mx-auto px-6 py-10">
       <header className="mb-10 text-center">
         <h1 className="font-display text-5xl text-gray-900 mb-3">
