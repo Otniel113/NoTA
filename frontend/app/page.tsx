@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import NoteDetailModal, { Note } from "@/components/ui/NoteDetailModal";
+import { useAuth } from "@/context/AuthContext";
 
 interface NoteData {
   note_id: string;
@@ -25,11 +27,19 @@ type DisplayNote = Note;
 const BG_COLORS = ["bg-sand-tan", "bg-sage-light", "bg-sage-medium", "bg-sand-light"];
 
 export default function Home() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const [notes, setNotes] = useState<DisplayNote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<DisplayNote | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push("/home");
+    }
+  }, [isAuthenticated, authLoading, router]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -104,6 +114,14 @@ export default function Home() {
       ? b.timestamp - a.timestamp
       : a.timestamp - b.timestamp
   );
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background-light">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <>

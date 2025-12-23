@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import HomeAuthNavbar from "@/components/layout/HomeAuthNavbar";
 import NoteDetailModal, { Note } from "@/components/ui/NoteDetailModal";
 import AddNoteModal from "@/components/ui/AddNoteModal";
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
+import { useAuth } from "@/context/AuthContext";
 
 interface NoteData {
   note_id: string;
@@ -26,6 +28,8 @@ type DisplayNote = Note;
 const BG_COLORS = ["bg-sand-tan", "bg-sage-light", "bg-sage-medium", "bg-sand-light"];
 
 export default function ProfilePage() {
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const router = useRouter();
   const [notes, setNotes] = useState<DisplayNote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
@@ -36,6 +40,14 @@ export default function ProfilePage() {
   const [deletingNote, setDeletingNote] = useState<DisplayNote | null>(null);
 
   useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isAuthenticated, authLoading, router]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
     const fetchData = async () => {
       try {
         // Simulate API delay
@@ -150,13 +162,21 @@ export default function ProfilePage() {
     // In a real app, we would refresh the list here
   };
 
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background-light">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <>
       <HomeAuthNavbar />
       <main className="flex-grow w-full max-w-7xl mx-auto px-6 py-10">
         <header className="mb-10 text-center">
           <h1 className="font-display text-5xl text-gray-900 mb-3">
-            Hello, @currentuser
+            Hello, @{user?.username}
           </h1>
           <p className="text-gray-600 text-lg font-light">
             Here are all the notes you have created.

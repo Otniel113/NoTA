@@ -4,14 +4,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AddNoteModal from "@/components/ui/AddNoteModal";
+import { useAuth } from "@/context/AuthContext";
 
 export default function HomeAuthNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAddNoteModalOpen, setIsAddNoteModalOpen] = useState(false);
   const router = useRouter();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    router.push("/");
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (

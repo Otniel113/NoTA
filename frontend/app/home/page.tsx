@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import HomeAuthNavbar from "@/components/layout/HomeAuthNavbar";
 import NoteDetailModal, { Note } from "@/components/ui/NoteDetailModal";
 import AddNoteModal from "@/components/ui/AddNoteModal";
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
+import { useAuth } from "@/context/AuthContext";
 
 interface NoteData {
   note_id: string;
@@ -26,6 +28,8 @@ type DisplayNote = Note;
 const BG_COLORS = ["bg-sand-tan", "bg-sage-light", "bg-sage-medium", "bg-sand-light"];
 
 export default function HomeAuthPage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const [notes, setNotes] = useState<DisplayNote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
@@ -36,6 +40,14 @@ export default function HomeAuthPage() {
   const [deletingNote, setDeletingNote] = useState<DisplayNote | null>(null);
 
   useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isAuthenticated, authLoading, router]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
     const fetchData = async () => {
       try {
         // Simulate API delay
@@ -149,6 +161,14 @@ export default function HomeAuthPage() {
     setSelectedNote(null); // Close detail modal if open
     // In a real app, we would refresh the list here
   };
+
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background-light">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <>
