@@ -2,21 +2,27 @@
 
 import { useState, useEffect } from "react";
 import { Note } from "./NoteDetailModal";
+import { useAuth } from "@/context/AuthContext";
 
 interface AddNoteModalProps {
   isOpen: boolean;
   onClose: () => void;
   noteToEdit?: Note | null;
+  onSuccess?: () => void;
 }
 
-export default function AddNoteModal({ isOpen, onClose, noteToEdit }: AddNoteModalProps) {
+export default function AddNoteModal({ isOpen, onClose, noteToEdit, onSuccess }: AddNoteModalProps) {
+  const { token } = useAuth();
   const [visibility, setVisibility] = useState<"members" | "public">("members");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   // Initialize state when modal opens or noteToEdit changes
   useEffect(() => {
     if (isOpen) {
+      setError("");
       if (noteToEdit) {
         setVisibility(noteToEdit.visibility === "public" ? "public" : "members");
         setTitle(noteToEdit.title);
@@ -30,6 +36,53 @@ export default function AddNoteModal({ isOpen, onClose, noteToEdit }: AddNoteMod
       }
     }
   }, [isOpen, noteToEdit]);
+
+  const handleSave = async () => {
+    if (!title.trim() || !content.trim()) {
+      setError("Title and content are required");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const API_URL = process.env.API_URL || "http://localhost:5000";
+      const url = noteToEdit 
+        ? `${API_URL}/notes/${noteToEdit.id}`
+        : `${API_URL}/notes`;
+      
+      const method = noteToEdit ? "PATCH" : "POST";
+      
+      // Map "members" to "member" for backend
+      const backendVisibility = visibility === "members" ? "member" : "public";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title,
+          content,
+          visibility: backendVisibility,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save note");
+      }
+
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to save note. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Close on escape key
   useEffect(() => {
@@ -72,6 +125,11 @@ export default function AddNoteModal({ isOpen, onClose, noteToEdit }: AddNoteMod
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-2">
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
           <div className="mt-4 mb-6">
             <label className="block text-xs font-bold uppercase tracking-wide text-[#8D7B68] mb-2 ml-1">Visibility</label>
             <div className="flex items-center gap-3">
@@ -138,17 +196,23 @@ export default function AddNoteModal({ isOpen, onClose, noteToEdit }: AddNoteMod
           <button 
             onClick={onClose}
             className="flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-[#8D7B68] font-bold text-sm hover:bg-[#D4A373]/10 transition-colors"
+            disabled={isLoading}
           >
             Cancel
           </button>
           <button 
-            onClick={onClose}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-[#D4A373] hover:bg-[#c29363] text-white shadow-lg shadow-[#D4A373]/20 transition-all font-bold text-sm tracking-wide group"
+            onClick={handleSave}
+            disabled={isLoading}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-[#D4A373] hover:bg-[#c29363] text-white shadow-lg shadow-[#D4A373]/20 transition-all font-bold text-sm tracking-wide group disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span className="material-icons-round text-[20px] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform">
-              {noteToEdit ? "save" : "send"}
-            </span>
-            {noteToEdit ? "Save" : "Post Note"}
+            {isLoading ? (
+              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            ) : (
+              <span className="material-icons-round text-[20px] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform">
+                {noteToEdit ? "save" : "send"}
+              </span>
+            )}
+            {isLoading ? "Saving..." : (noteToEdit ? "Save" : "Post Note")}
           </button>
         </div>
       </div>

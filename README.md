@@ -20,9 +20,11 @@ NoTA is a simple sticky note full-stack application designed for a coding interv
 
 ### Frontend
 - **Note Management:** Create, Read, Update, and Delete notes.
+- **Search:** Find notes by title or content.
 - **Interactive UI:** Modal-based workflows for adding, viewing, and editing notes.
 - **Responsive Design:** Optimized for both desktop and mobile views.
 - **Visibility Control:** Toggle note visibility between "Public" and "Members".
+- **Profile Management:** Securely change user password.
 
 ### Backend
 - **Authentication:** Register, Login, Logout, and Profile management.

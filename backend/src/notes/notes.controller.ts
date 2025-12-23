@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -27,8 +28,8 @@ export class NotesController {
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get()
-  findAll(@Request() req) {
-    return this.notesService.findAll(req.user?.userId);
+  findAll(@Request() req, @Query('search') search: string) {
+    return this.notesService.findAll(req.user?.userId, search);
   }
 
   @UseGuards(OptionalJwtAuthGuard)

@@ -1,18 +1,39 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthNavbar from "@/components/layout/AuthNavbar";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple routing as requested
-    router.push("/home");
+    setError("");
+    setLoading(true);
+    try {
+      await login(formData);
+      // Redirect is handled in login function
+    } catch (err: any) {
+      setError(err.message || "Failed to login");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -33,13 +54,22 @@ export default function LoginPage() {
                 <p className="text-gray-600">Sign in to access your notes</p>
               </header>
 
+              {error && (
+                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center">
+                  {error}
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 <Input
                   label="Email or Username"
                   icon="person"
-                  placeholder="Enter your email"
+                  placeholder="Enter your username or email"
                   required
                   type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
                 />
 
                 <div className="space-y-2">
@@ -59,12 +89,15 @@ export default function LoginPage() {
                       placeholder="••••••••"
                       required
                       type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
                     />
                   </div>
                 </div>
 
-                <Button type="submit" fullWidth>
-                  Sign In
+                <Button type="submit" fullWidth disabled={loading}>
+                  {loading ? "Signing In..." : "Sign In"}
                 </Button>
               </form>
             </div>

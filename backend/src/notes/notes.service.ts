@@ -18,13 +18,46 @@ export class NotesService {
     return newNote.save();
   }
 
-  async findAll(userId?: string): Promise<NoteDocument[]> {
-    const filter = userId ? {} : { visibility: 'public' };
+  async findAll(userId?: string, search?: string): Promise<NoteDocument[]> {
+    const baseFilter = userId ? {} : { visibility: 'public' };
+    let filter: any = { ...baseFilter };
+
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      filter = {
+        $and: [
+          baseFilter,
+          {
+            $or: [
+              { title: searchRegex },
+              { content: searchRegex },
+            ],
+          },
+        ],
+      };
+    }
+
     return this.noteModel.find(filter).populate('author', 'username').exec();
   }
 
-  async findAllByAuthor(userId: string): Promise<NoteDocument[]> {
-    return this.noteModel.find({ author: userId as any }).populate('author', 'username').exec();
+  async findAllByAuthor(userId: string, search?: string): Promise<NoteDocument[]> {
+    let filter: any = { author: userId };
+
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      filter = {
+        $and: [
+          { author: userId },
+          {
+            $or: [
+              { title: searchRegex },
+              { content: searchRegex },
+            ],
+          },
+        ],
+      };
+    }
+    return this.noteModel.find(filter).populate('author', 'username').exec();
   }
 
   async findOne(id: string, userId?: string): Promise<NoteDocument> {

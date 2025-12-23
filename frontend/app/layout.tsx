@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Serif_Display, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
 
 const dmSerif = DM_Serif_Display({
   weight: "400",
@@ -39,7 +40,7 @@ export default function RootLayout({
       <body
         className={`${dmSerif.variable} ${inter.variable} ${jetbrainsMono.variable} bg-background-light text-text-main-light transition-colors duration-300 min-h-screen flex flex-col font-sans antialiased`}
       >
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

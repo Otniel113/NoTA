@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Headers, HttpCode, HttpStatus, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Headers, HttpCode, HttpStatus, Post, Query, Request, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { NotesService } from '../notes/notes.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
@@ -35,6 +36,12 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  changePassword(@Request() req, @Body() changePasswordDto: ChangePasswordDto) {
+    return this.authService.changePassword(req.user.userId, changePasswordDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('profile')
   getProfile(@Request() req) {
     return req.user;
@@ -42,7 +49,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('profile/notes')
-  async getProfileNotes(@Request() req) {
-    return this.notesService.findAllByAuthor(req.user.userId);
+  async getProfileNotes(@Request() req, @Query('search') search: string) {
+    return this.notesService.findAllByAuthor(req.user.userId, search);
   }
 }
