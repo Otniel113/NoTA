@@ -6,6 +6,7 @@ import HomeAuthNavbar from "@/components/layout/HomeAuthNavbar";
 import NoteDetailModal, { Note } from "@/components/ui/NoteDetailModal";
 import AddNoteModal from "@/components/ui/AddNoteModal";
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
+import ChangePasswordModal from "@/components/ui/ChangePasswordModal";
 import { useAuth } from "@/context/AuthContext";
 
 interface NoteData {
@@ -38,6 +39,7 @@ export default function ProfilePage() {
   const [selectedNote, setSelectedNote] = useState<DisplayNote | null>(null);
   const [editingNote, setEditingNote] = useState<DisplayNote | null>(null);
   const [deletingNote, setDeletingNote] = useState<DisplayNote | null>(null);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchData = async (query = searchQuery) => {
@@ -202,9 +204,16 @@ export default function ProfilePage() {
           <h1 className="font-display text-5xl text-gray-900 mb-3">
             Hello, @{user?.username}
           </h1>
-          <p className="text-gray-600 text-lg font-light">
+          <p className="text-gray-600 text-lg font-light mb-6">
             Here are all the notes you have created.
           </p>
+          <button
+            onClick={() => setIsChangePasswordModalOpen(true)}
+            className="bg-white border border-[#D4A373]/30 hover:border-[#D4A373] text-[#5C4033] hover:bg-[#FEFAE0] px-6 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 font-bold text-sm mx-auto group"
+          >
+            <span className="material-icons-round text-lg text-[#D4A373] group-hover:text-[#5C4033] transition-colors">lock_reset</span>
+            Change Password
+          </button>
         </header>
 
         {isLoading ? (
@@ -402,6 +411,10 @@ export default function ProfilePage() {
         isOpen={!!deletingNote}
         onClose={() => setDeletingNote(null)}
         onConfirm={confirmDelete}
+      />
+      <ChangePasswordModal
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
       />
     </>
   );

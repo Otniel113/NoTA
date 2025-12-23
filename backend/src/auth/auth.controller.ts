@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { NotesService } from '../notes/notes.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
@@ -32,6 +33,12 @@ export class AuthController {
       await this.authService.logout(token);
     }
     return { message: 'Logged out successfully' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  changePassword(@Request() req, @Body() changePasswordDto: ChangePasswordDto) {
+    return this.authService.changePassword(req.user.userId, changePasswordDto);
   }
 
   @UseGuards(JwtAuthGuard)

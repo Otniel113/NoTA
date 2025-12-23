@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { BlacklistedToken, BlacklistedTokenDocument } from './schemas/blacklisted-token.schema';
 
 @Injectable()
@@ -83,5 +84,24 @@ export class AuthService {
   async isTokenBlacklisted(token: string): Promise<boolean> {
     const blacklistedToken = await this.blacklistedTokenModel.findOne({ token }).exec();
     return !!blacklistedToken;
+  }
+
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
+    const { currentPassword, newPassword } = changePasswordDto;
+    
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid current password');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.usersService.updatePassword(userId, hashedPassword);
+
+    return { message: 'Password changed successfully' };
   }
 }
