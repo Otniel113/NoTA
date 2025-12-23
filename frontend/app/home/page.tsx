@@ -28,7 +28,7 @@ type DisplayNote = Note;
 const BG_COLORS = ["bg-sand-tan", "bg-sage-light", "bg-sage-medium", "bg-sand-light"];
 
 export default function HomeAuthPage() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, token, user } = useAuth();
   const router = useRouter();
   const [notes, setNotes] = useState<DisplayNote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,6 +39,71 @@ export default function HomeAuthPage() {
   const [editingNote, setEditingNote] = useState<DisplayNote | null>(null);
   const [deletingNote, setDeletingNote] = useState<DisplayNote | null>(null);
 
+  const fetchData = async () => {
+    try {
+      const API_URL = process.env.API_URL || "http://localhost:5000";
+      const response = await fetch(`${API_URL}/notes`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch notes");
+      }
+
+      const notesData = await response.json();
+
+      const processedNotes: DisplayNote[] = notesData
+        .map((note: any, index: number) => {
+          const date = new Date(note.edited_at || note.created_at);
+          const now = new Date();
+          const diffTime = Math.abs(now.getTime() - date.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          let updatedLabel = "";
+          if (diffDays <= 1) updatedLabel = "Updated today";
+          else if (diffDays === 2) updatedLabel = "Updated yesterday";
+          else if (diffDays < 7) updatedLabel = `Updated ${diffDays} days ago`;
+          else if (diffDays < 30) updatedLabel = `Updated ${Math.floor(diffDays / 7)} weeks ago`;
+          else updatedLabel = `Updated ${Math.floor(diffDays / 30)} months ago`;
+
+          // Normalize visibility for frontend (member -> members)
+          const visibility = note.visibility === "member" ? "members" : note.visibility;
+
+          const formatDate = (dateStr: string) => {
+            return new Date(dateStr).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          };
+
+          return {
+            id: note._id,
+            author: `@${note.author?.username || "unknown"}`,
+            title: note.title,
+            content: note.content,
+            updatedLabel,
+            createdAt: formatDate(note.created_at),
+            editedAt: note.edited_at ? formatDate(note.edited_at) : null,
+            timestamp: date.getTime(),
+            bgColor: BG_COLORS[index % BG_COLORS.length],
+            visibility: visibility,
+            isOwner: note.author?._id === user?.userId || note.author === user?.userId, // Check ownership
+          };
+        });
+
+      setNotes(processedNotes);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push("/login");
@@ -47,77 +112,8 @@ export default function HomeAuthPage() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-
-    const fetchData = async () => {
-      try {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 800));
-
-        const [notesRes, usersRes] = await Promise.all([
-          fetch("/note_data.json"),
-          fetch("/user_data.json"),
-        ]);
-
-        const notesData: NoteData[] = await notesRes.json();
-        const usersData: UserData[] = await usersRes.json();
-
-        // Create a map for quick user lookup
-        const userMap = new Map(usersData.map((u) => [u.user_id, u.username]));
-        const currentUserId = "u1"; // Hardcoded current user
-
-        const processedNotes: DisplayNote[] = notesData
-          .filter((note) => note.visibility === "public" || note.visibility === "member")
-          .map((note, index) => {
-            const date = new Date(note.edited_at || note.created_at);
-            const now = new Date();
-            const diffTime = Math.abs(now.getTime() - date.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
-            let updatedLabel = "";
-            if (diffDays <= 1) updatedLabel = "Updated today";
-            else if (diffDays === 2) updatedLabel = "Updated yesterday";
-            else if (diffDays < 7) updatedLabel = `Updated ${diffDays} days ago`;
-            else if (diffDays < 30) updatedLabel = `Updated ${Math.floor(diffDays / 7)} weeks ago`;
-            else updatedLabel = `Updated ${Math.floor(diffDays / 30)} months ago`;
-
-            // Normalize visibility for frontend (member -> members)
-            const visibility = note.visibility === "member" ? "members" : note.visibility;
-
-            const formatDate = (dateStr: string) => {
-              return new Date(dateStr).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              });
-            };
-
-            return {
-              id: note.note_id,
-              author: `@${userMap.get(note.author) || "unknown"}`,
-              title: note.title,
-              content: note.content,
-              updatedLabel,
-              createdAt: formatDate(note.created_at),
-              editedAt: note.edited_at ? formatDate(note.edited_at) : null,
-              timestamp: date.getTime(),
-              bgColor: BG_COLORS[index % BG_COLORS.length],
-              visibility,
-              isOwner: note.author === currentUserId,
-            };
-          });
-
-        setNotes(processedNotes);
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchData();
-  }, []);
+  }, [isAuthenticated, token, user]);
 
   const filteredNotes = notes.filter((note) => {
     if (filter === "all") return true;
@@ -154,12 +150,29 @@ export default function HomeAuthPage() {
     // Keep detail modal open if it was open, as per requirement "if detail note, then return to detail note" (on cancel)
   };
 
-  const confirmDelete = () => {
-    // Perform delete logic here (mock)
-    console.log("Deleted note:", deletingNote?.id);
+  const confirmDelete = async () => {
+    if (!deletingNote) return;
+    
+    try {
+      const API_URL = process.env.API_URL || "http://localhost:5000";
+      const response = await fetch(`${API_URL}/notes/${deletingNote.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete note");
+      }
+
+      fetchData();
+    } catch (error) {
+      console.error("Failed to delete note", error);
+    }
+
     setDeletingNote(null);
     setSelectedNote(null); // Close detail modal if open
-    // In a real app, we would refresh the list here
   };
 
   if (authLoading || !isAuthenticated) {
@@ -172,7 +185,7 @@ export default function HomeAuthPage() {
 
   return (
     <>
-      <HomeAuthNavbar />
+      <HomeAuthNavbar onNoteAdded={fetchData} />
       <main className="flex-grow w-full max-w-7xl mx-auto px-6 py-10">
         <header className="mb-10 text-center">
           <h1 className="font-display text-5xl text-gray-900 mb-3">
@@ -374,6 +387,7 @@ export default function HomeAuthPage() {
         isOpen={!!editingNote}
         onClose={() => setEditingNote(null)}
         noteToEdit={editingNote}
+        onSuccess={fetchData}
       />
 
       <DeleteConfirmationModal

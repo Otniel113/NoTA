@@ -44,23 +44,17 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        const API_URL = process.env.API_URL || "http://localhost:5000";
+        const response = await fetch(`${API_URL}/notes`);
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch notes");
+        }
 
-        const [notesRes, usersRes] = await Promise.all([
-          fetch("/note_data.json"),
-          fetch("/user_data.json"),
-        ]);
-
-        const notesData: NoteData[] = await notesRes.json();
-        const usersData: UserData[] = await usersRes.json();
-
-        // Create a map for quick user lookup
-        const userMap = new Map(usersData.map((u) => [u.user_id, u.username]));
+        const notesData = await response.json();
 
         const processedNotes: DisplayNote[] = notesData
-          .filter((note) => note.visibility === "public") // Only show public notes
-          .map((note, index) => {
+          .map((note: any, index: number) => {
             const date = new Date(note.edited_at || note.created_at);
             const now = new Date();
             const diffTime = Math.abs(now.getTime() - date.getTime());
@@ -84,10 +78,10 @@ export default function Home() {
             };
 
             return {
-              id: note.note_id,
-              author: `@${userMap.get(note.author) || "unknown"}`,
+              id: note._id,
+              author: `@${note.author?.username || "unknown"}`,
               title: note.title,
-              content: note.content, // In a real app, you might parse markdown here
+              content: note.content,
               updatedLabel,
               createdAt: formatDate(note.created_at),
               editedAt: note.edited_at ? formatDate(note.edited_at) : null,

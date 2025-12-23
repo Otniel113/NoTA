@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import AddNoteModal from "@/components/ui/AddNoteModal";
 import { useAuth } from "@/context/AuthContext";
 
-export default function HomeAuthNavbar() {
+interface HomeAuthNavbarProps {
+  onNoteAdded?: () => void;
+}
+
+export default function HomeAuthNavbar({ onNoteAdded }: HomeAuthNavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAddNoteModalOpen, setIsAddNoteModalOpen] = useState(false);
   const router = useRouter();
@@ -111,7 +115,11 @@ export default function HomeAuthNavbar() {
         <span className="material-icons-round text-3xl">add</span>
       </button>
 
-      <AddNoteModal isOpen={isAddNoteModalOpen} onClose={() => setIsAddNoteModalOpen(false)} />
+      <AddNoteModal 
+        isOpen={isAddNoteModalOpen} 
+        onClose={() => setIsAddNoteModalOpen(false)} 
+        onSuccess={onNoteAdded}
+      />
     </nav>
   );
 }
