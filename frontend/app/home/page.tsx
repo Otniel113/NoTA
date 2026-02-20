@@ -39,6 +39,8 @@ export default function HomeAuthPage() {
   const [editingNote, setEditingNote] = useState<DisplayNote | null>(null);
   const [deletingNote, setDeletingNote] = useState<DisplayNote | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
 
   const fetchData = async (query = searchQuery) => {
     try {
@@ -96,7 +98,7 @@ export default function HomeAuthPage() {
             createdAt: formatDate(note.created_at),
             editedAt: note.edited_at ? formatDate(note.edited_at) : null,
             timestamp: date.getTime(),
-            bgColor: BG_COLORS[index % BG_COLORS.length],
+            bgColor: BG_COLORS[Math.floor(Math.random() * BG_COLORS.length)],
             visibility: visibility,
             isOwner: note.author?._id === user?.userId || note.author === user?.userId, // Check ownership
           };
@@ -126,6 +128,10 @@ export default function HomeAuthPage() {
     return () => clearTimeout(delayDebounceFn);
   }, [isAuthenticated, token, user, searchQuery]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, sortOrder, searchQuery]);
+
   const filteredNotes = notes.filter((note) => {
     if (filter === "all") return true;
     return note.visibility === filter;
@@ -135,6 +141,12 @@ export default function HomeAuthPage() {
     sortOrder === "newest"
       ? b.timestamp - a.timestamp
       : a.timestamp - b.timestamp
+  );
+
+  const totalPages = Math.ceil(sortedNotes.length / itemsPerPage);
+  const paginatedNotes = sortedNotes.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   const getVisibilityIcon = (visibility: string) => {
@@ -326,7 +338,7 @@ export default function HomeAuthPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {sortedNotes.map((note) => (
+              {paginatedNotes.map((note) => (
                 <article
                   key={note.id}
                   onClick={() => setSelectedNote(note)}
@@ -382,6 +394,32 @@ export default function HomeAuthPage() {
                 </article>
               ))}
             </div>
+
+            {totalPages > 1 && (
+              <div className="mt-16 mb-8 flex justify-center items-center gap-8">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-md border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-primary/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  <span className="material-icons-round text-3xl">chevron_left</span>
+                </button>
+
+                <div className="flex flex-col items-center min-w-[120px]">
+                  <span className="text-lg font-semibold text-gray-800 tracking-tight">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-md border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-primary/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  <span className="material-icons-round text-3xl">chevron_right</span>
+                </button>
+              </div>
+            )}
           </>
         )}
       </main>
