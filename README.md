@@ -18,7 +18,7 @@ NoTA is a simple sticky note full-stack application designed for a coding interv
 
 ## 🌐 Deployment
 
-- **Frontend:** [https://no-ta.vercel.app/](https://no-ta.vercel.app/) (Deployed on Vercel)
+- **Frontend:** [https://nota.otnielabiezer.com/](https://nota.otnielabiezer.com/) (Deployed on Vercel)
 - **Backend:** [https://nota-api-jzlr.onrender.com/](https://nota-api-jzlr.onrender.com/) (Deployed on Render)
 
 ## ✨ Features

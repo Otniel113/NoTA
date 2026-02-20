@@ -91,7 +91,7 @@ export default function Home() {
               createdAt: formatDate(note.created_at),
               editedAt: note.edited_at ? formatDate(note.edited_at) : null,
               timestamp: date.getTime(),
-              bgColor: BG_COLORS[index % BG_COLORS.length],
+              bgColor: BG_COLORS[Math.floor(Math.random() * BG_COLORS.length)],
               visibility: note.visibility,
               isOwner: false,
             };

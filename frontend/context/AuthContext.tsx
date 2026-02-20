@@ -73,7 +73,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Login failed");
+        const errorMessage = Array.isArray(errorData.message) 
+          ? errorData.message.join("\n") 
+          : errorData.message || "Login failed";
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -101,7 +104,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Registration failed");
+        const errorMessage = Array.isArray(errorData.message) 
+          ? errorData.message.join("\n") 
+          : errorData.message || "Registration failed";
+        throw new Error(errorMessage);
       }
 
       // After register, usually redirect to login or auto-login

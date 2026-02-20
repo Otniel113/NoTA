@@ -55,7 +55,10 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to change password");
+        const errorMessage = Array.isArray(data.message) 
+          ? data.message.join("\n") 
+          : data.message || "Failed to change password";
+        throw new Error(errorMessage);
       }
 
       setSuccessMessage("Password changed successfully");
@@ -109,7 +112,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
         {/* Body */}
         <div className="p-6 space-y-6">
           {error && (
-            <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center">
+            <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center whitespace-pre-line">
               {error}
             </div>
           )}

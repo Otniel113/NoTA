@@ -12,7 +12,7 @@ interface AddNoteModalProps {
 }
 
 export default function AddNoteModal({ isOpen, onClose, noteToEdit, onSuccess }: AddNoteModalProps) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [visibility, setVisibility] = useState<"members" | "public">("members");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -71,14 +71,18 @@ export default function AddNoteModal({ isOpen, onClose, noteToEdit, onSuccess }:
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save note");
+        const errorData = await response.json();
+        const errorMessage = Array.isArray(errorData.message) 
+          ? errorData.message.join("\n") 
+          : errorData.message || "Failed to save note";
+        throw new Error(errorMessage);
       }
 
       if (onSuccess) onSuccess();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError("Failed to save note. Please try again.");
+      setError(err.message || "Failed to save note. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -109,7 +113,7 @@ export default function AddNoteModal({ isOpen, onClose, noteToEdit, onSuccess }:
         {/* Header */}
         <div className="flex items-start justify-between p-6 pb-2 border-b border-transparent shrink-0">
           <div className="flex flex-col gap-0.5">
-            <span className="text-[#5C4033] text-lg font-bold leading-tight">@currentuser</span>
+            <span className="text-[#5C4033] text-lg font-bold leading-tight">@{user?.username || "currentuser"}</span>
             <span className="text-[#8D7B68] text-xs">
               {noteToEdit ? "Edit Note" : "New Note • Draft"}
             </span>
@@ -126,7 +130,7 @@ export default function AddNoteModal({ isOpen, onClose, noteToEdit, onSuccess }:
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-2">
           {error && (
-            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm whitespace-pre-line">
               {error}
             </div>
           )}

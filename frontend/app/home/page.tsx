@@ -96,7 +96,7 @@ export default function HomeAuthPage() {
             createdAt: formatDate(note.created_at),
             editedAt: note.edited_at ? formatDate(note.edited_at) : null,
             timestamp: date.getTime(),
-            bgColor: BG_COLORS[index % BG_COLORS.length],
+            bgColor: BG_COLORS[Math.floor(Math.random() * BG_COLORS.length)],
             visibility: visibility,
             isOwner: note.author?._id === user?.userId || note.author === user?.userId, // Check ownership
           };
@@ -112,7 +112,7 @@ export default function HomeAuthPage() {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push("/login");
+      router.push("/");
     }
   }, [isAuthenticated, authLoading, router]);
 

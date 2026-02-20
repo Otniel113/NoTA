@@ -66,7 +66,7 @@ export default function NoteDetailModal({ isOpen, onClose, note, onEdit, onDelet
             <span className="text-[#8D7B68] text-sm">{note.updatedLabel}</span>
             <div className="flex flex-col gap-0.5 mt-1">
               <span className="text-[#8D7B68] text-xs">Created: {note.createdAt}</span>
-              {note.editedAt && (
+              {note.editedAt && note.editedAt !== note.createdAt && (
                 <span className="text-[#8D7B68] text-xs">Edited: {note.editedAt}</span>
               )}
             </div>
