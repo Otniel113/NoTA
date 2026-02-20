@@ -183,4 +183,81 @@ export class NotesService {
 
     await this.noteModel.findByIdAndDelete(id).exec();
   }
+
+  async findSharedByAuthor(authorId: string, search?: string): Promise<NoteDocument[]> {
+    const userId = authorId;
+    // Basic filter for logged in users viewing another user's profile:
+    // They can see 'public' and 'member' notes.
+    // They should NOT see 'private' notes unless they are the author (separate endpoint usually).
+    const baseFilter: any = { 
+      author: userId,
+      visibility: { $in: ['public', 'member'] }
+    };
+    
+    // For aggregate, we need to match authorId as string or ObjectId depending on stored type.
+    // Here we use the same logic as findAllByAuthor.
+
+    if (!search) {
+      return this.noteModel.find(baseFilter).populate('author', 'username').exec();
+    }
+
+    const escapeRegex = (text: string) => text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+    const searchRegex = new RegExp(escapeRegex(search), 'i');
+
+    const notes = await this.noteModel.aggregate([
+      {
+        $match: {
+          $expr: { $eq: [{ $toString: '$author' }, userId] },
+          visibility: { $in: ['public', 'member'] }
+        }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          let: { authorId: '$author' },
+          pipeline: [
+            { $match: { $expr: { $eq: [{ $toString: '$_id' }, { $toString: '$$authorId' }] } } }
+          ],
+          as: 'authorDetails'
+        }
+      },
+      {
+        $unwind: {
+          path: '$authorDetails',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $match: {
+          $or: [
+            { title: searchRegex },
+            { content: searchRegex },
+            { 'authorDetails.username': searchRegex }
+          ]
+        }
+      },
+      {
+        $addFields: {
+          author: {
+            $cond: {
+              if: { $not: ['$authorDetails'] },
+              then: null,
+              else: {
+                _id: '$authorDetails._id',
+                username: '$authorDetails.username'
+              }
+            }
+          },
+          id: '$_id'
+        }
+      },
+      {
+        $project: {
+          authorDetails: 0
+        }
+      }
+    ]).exec();
+
+    return notes as any;
+  }
 }

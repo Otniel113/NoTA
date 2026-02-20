@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
 export interface Note {
   id: string;
@@ -25,6 +27,8 @@ interface NoteDetailModalProps {
 }
 
 export default function NoteDetailModal({ isOpen, onClose, note, onEdit, onDelete }: NoteDetailModalProps) {
+  const { isAuthenticated } = useAuth();
+
   // Close on escape key
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -53,7 +57,18 @@ export default function NoteDetailModal({ isOpen, onClose, note, onEdit, onDelet
         <div className="flex items-start justify-between px-8 pt-8 pb-4 border-b border-transparent shrink-0">
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-3">
-              <span className="text-[#5C4033] font-bold text-xl leading-none">{note.author}</span>
+              {isAuthenticated ? (
+                <Link 
+                  href={`/profile/${note.author.startsWith('@') ? note.author.substring(1) : note.author}`}
+                  className="text-[#5C4033] font-bold text-xl leading-none hover:underline cursor-pointer"
+                >
+                  {note.author}
+                </Link>
+              ) : (
+                <span className="text-[#5C4033] font-bold text-xl leading-none">
+                  {note.author}
+                </span>
+              )}
               <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#E9EDC9]/50 border border-[#CCD5AE]/20">
                 <span className="material-icons-round text-[#8D7B68] text-[14px]">
                   {note.visibility === 'members' ? 'group' : 'public'}

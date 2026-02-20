@@ -1,68 +1,76 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, use } from "react";
+import { useRouter, useParams } from "next/navigation";
 import HomeAuthNavbar from "@/components/layout/HomeAuthNavbar";
 import NoteDetailModal, { Note } from "@/components/ui/NoteDetailModal";
-import AddNoteModal from "@/components/ui/AddNoteModal";
-import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
-import ChangePasswordModal from "@/components/ui/ChangePasswordModal";
 import { useAuth } from "@/context/AuthContext";
 
-interface NoteData {
-  note_id: string;
-  author: string;
-  title: string;
-  content: string;
-  visibility: string;
-  created_at: string;
-  edited_at: string | null;
-}
-
-interface UserData {
-  user_id: string;
-  username: string;
-}
-
+// Simplified types for this page
 type DisplayNote = Note;
 
 const BG_COLORS = ["bg-sand-tan", "bg-sage-light", "bg-sage-medium", "bg-sand-light"];
 
-export default function ProfilePage() {
-  const { isAuthenticated, isLoading: authLoading, user, token } = useAuth();
+// We define the Profile User interface explicitly since we fetch it
+interface ProfileUser {
+  username: string;
+  email: string;
+  _id: string;
+  createdAt: string;
+}
+
+export default function UserProfilePage() {
+  const { isAuthenticated, isLoading: authLoading, user: currentUser, token } = useAuth();
   const router = useRouter();
+  const params = useParams();
+  const targetUsername = params?.username as string;
+
   const [notes, setNotes] = useState<DisplayNote[]>([]);
+  const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | "public" | "members">("all");
   const [selectedNote, setSelectedNote] = useState<DisplayNote | null>(null);
-  const [editingNote, setEditingNote] = useState<DisplayNote | null>(null);
-  const [deletingNote, setDeletingNote] = useState<DisplayNote | null>(null);
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
+  // Fetch Profile User Info and Notes
   const fetchData = async (query = searchQuery) => {
+    if (!targetUsername) return;
+    
     try {
+      setIsLoading(true);
       const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-      const url = new URL(`${API_URL}/auth/profile/notes`);
-      if (query) {
-        url.searchParams.append("search", query);
+
+      // Parallel fetch: User Profile Info and Notes
+      const [userResponse, notesResponse] = await Promise.all([
+        fetch(`${API_URL}/users/profile/${targetUsername}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API_URL}/users/profile/${targetUsername}/notes?search=${query || ''}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      ]);
+
+      if (!userResponse.ok) {
+         if (userResponse.status === 404) {
+             // Handle user not found
+             // router.push("/404"); // Or show error
+             console.error("User not found");
+         }
+         throw new Error("Failed to fetch user profile");
       }
+      
+      const userData = await userResponse.json();
+      setProfileUser(userData);
 
-      const response = await fetch(url.toString(), {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
+      if (!notesResponse.ok) {
         throw new Error("Failed to fetch notes");
       }
 
-      const notesData = await response.json();
+      const notesData = await notesResponse.json();
 
       const processedNotes: DisplayNote[] = notesData
         .map((note: any, index: number) => {
@@ -78,7 +86,7 @@ export default function ProfilePage() {
           else if (diffDays < 30) updatedLabel = `Updated ${Math.floor(diffDays / 7)} weeks ago`;
           else updatedLabel = `Updated ${Math.floor(diffDays / 30)} months ago`;
 
-          // Normalize visibility for frontend (member -> members)
+          // Normalize visibility logic 
           const visibility = note.visibility === "member" ? "members" : note.visibility;
 
           const formatDate = (dateStr: string) => {
@@ -93,7 +101,7 @@ export default function ProfilePage() {
 
           return {
             id: note._id,
-            author: `@${note.author?.username || "unknown"}`,
+            author: `@${note.author?.username || userData.username || "unknown"}`,
             title: note.title,
             content: note.content,
             updatedLabel,
@@ -102,7 +110,7 @@ export default function ProfilePage() {
             timestamp: date.getTime(),
             bgColor: BG_COLORS[index % BG_COLORS.length],
             visibility: visibility,
-            isOwner: true, // Always owner in profile
+            isOwner: false, // Viewing another profile -> not owner (unless logic fails, but protected below)
           };
         });
 
@@ -120,15 +128,24 @@ export default function ProfilePage() {
     }
   }, [isAuthenticated, authLoading, router]);
 
+  // Redirect if viewing own profile
   useEffect(() => {
-    if (!isAuthenticated) return;
-    
-    const delayDebounceFn = setTimeout(() => {
-      fetchData(searchQuery);
-    }, 500);
+    if (currentUser && targetUsername && currentUser.username === targetUsername) {
+      router.push("/profile");
+    }
+  }, [currentUser, targetUsername, router]);
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [isAuthenticated, token, searchQuery]);
+  useEffect(() => {
+    if (!isAuthenticated || !targetUsername) return;
+    
+    // Only fetch if not redirected
+    if (currentUser?.username !== targetUsername) {
+        const delayDebounceFn = setTimeout(() => {
+          fetchData(searchQuery);
+        }, 500);
+        return () => clearTimeout(delayDebounceFn);
+    }
+  }, [isAuthenticated, token, searchQuery, targetUsername, currentUser]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -162,45 +179,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleEdit = (note: DisplayNote) => {
-    setEditingNote(note);
-    // If we are editing from detail modal, we might want to close it or keep it open.
-    // User requirement: "direct to the last visited page".
-    // This implies closing the detail modal if it's open.
-    setSelectedNote(null); 
-  };
-
-  const handleDelete = (note: DisplayNote) => {
-    setDeletingNote(note);
-    // Keep detail modal open if it was open, as per requirement "if detail note, then return to detail note" (on cancel)
-  };
-
-  const confirmDelete = async () => {
-    if (!deletingNote) return;
-    
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-      const response = await fetch(`${API_URL}/notes/${deletingNote.id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete note");
-      }
-
-      fetchData();
-    } catch (error) {
-      console.error("Failed to delete note", error);
-    }
-
-    setDeletingNote(null);
-    setSelectedNote(null); // Close detail modal if open
-  };
-
-  if (authLoading || !isAuthenticated) {
+  if (authLoading || !isAuthenticated || (currentUser?.username === targetUsername)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background-light">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -210,22 +189,16 @@ export default function ProfilePage() {
 
   return (
     <>
-      <HomeAuthNavbar onNoteAdded={fetchData} onSearch={setSearchQuery} />
+      <HomeAuthNavbar onNoteAdded={() => {}} onSearch={setSearchQuery} />
       <main className="flex-grow w-full max-w-7xl mx-auto px-6 py-10">
         <header className="mb-10 text-center">
           <h1 className="font-display text-5xl text-gray-900 mb-3">
-            Hello, @{user?.username}
+             {profileUser ? `@${profileUser.username}` : targetUsername}
           </h1>
           <p className="text-gray-600 text-lg font-light mb-6">
-            Here are all the notes you have created.
+             Here are the notes shared by {profileUser?.username || targetUsername}.
           </p>
-          <button
-            onClick={() => setIsChangePasswordModalOpen(true)}
-            className="bg-white border border-[#D4A373]/30 hover:border-[#D4A373] text-[#5C4033] hover:bg-[#FEFAE0] px-6 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 font-bold text-sm mx-auto group"
-          >
-            <span className="material-icons-round text-lg text-[#D4A373] group-hover:text-[#5C4033] transition-colors">lock_reset</span>
-            Change Password
-          </button>
+          {/* No Edit Profile / Change Password buttons here */}
         </header>
 
         {isLoading ? (
@@ -343,63 +316,54 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {paginatedNotes.map((note) => (
-                <article
-                  key={note.id}
-                  onClick={() => setSelectedNote(note)}
-                  className={`group relative ${note.bgColor} p-6 rounded-2xl shadow-soft hover:shadow-md transition-all duration-300 flex flex-col h-80 cursor-pointer`}
-                >
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="font-bold text-lg text-gray-800">
-                      {note.author}
-                    </span>
-                    {note.isOwner && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleEdit(note); }}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/40 hover:bg-white/70 text-gray-700 transition-colors cursor-pointer"
-                          title="Edit"
-                        >
-                          <span className="material-icons-round text-lg">edit</span>
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDelete(note); }}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/40 hover:bg-red-100 text-red-500 hover:text-red-600 transition-colors cursor-pointer"
-                          title="Delete"
-                        >
-                          <span className="material-icons-round text-lg">
-                            delete
-                          </span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <h3 className="font-display text-xl text-gray-800 mb-2 leading-tight">
-                    {note.title}
-                  </h3>
-                  <div className="note-content flex-grow overflow-hidden fade-bottom mb-4 text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
-                    {note.content}
-                  </div>
-                  <div className="mt-auto flex justify-between items-center border-t border-black/5 pt-4">
-                    <span className="text-xs text-gray-500">
-                      {note.updatedLabel}
-                    </span>
-                    <div
-                      className="w-8 h-8 flex items-center justify-center"
-                      title={
-                        note.visibility.charAt(0).toUpperCase() +
-                        note.visibility.slice(1)
-                      }
+            {paginatedNotes.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <span className="material-icons-round text-6xl text-gray-300 mb-4">note_off</span>
+                    <h3 className="text-xl font-semibold text-gray-600 mb-2">No notes found</h3>
+                    <p className="text-gray-500 max-w-sm">
+                        This user hasn't posted any notes yet, or none match your filter.
+                    </p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {paginatedNotes.map((note) => (
+                    <article
+                    key={note.id}
+                    onClick={() => setSelectedNote(note)}
+                    className={`group relative ${note.bgColor} p-6 rounded-2xl shadow-soft hover:shadow-md transition-all duration-300 flex flex-col h-80 cursor-pointer`}
                     >
-                      <span className="material-icons-round text-gray-600 text-sm">
-                        {getVisibilityIcon(note.visibility)}
-                      </span>
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="font-bold text-lg text-gray-800">
+                        {note.author}
+                        </span>
+                        {/* No Edit/Delete buttons here since isOwner is false */}
                     </div>
-                  </div>
-                </article>
-              ))}
-            </div>
+                    <h3 className="font-display text-xl text-gray-800 mb-2 leading-tight">
+                        {note.title}
+                    </h3>
+                    <div className="note-content flex-grow overflow-hidden fade-bottom mb-4 text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+                        {note.content}
+                    </div>
+                    <div className="mt-auto flex justify-between items-center border-t border-black/5 pt-4">
+                        <span className="text-xs text-gray-500">
+                        {note.updatedLabel}
+                        </span>
+                        <div
+                        className="w-8 h-8 flex items-center justify-center"
+                        title={
+                            note.visibility.charAt(0).toUpperCase() +
+                            note.visibility.slice(1)
+                        }
+                        >
+                        <span className="material-icons-round text-gray-600 text-sm">
+                            {getVisibilityIcon(note.visibility)}
+                        </span>
+                        </div>
+                    </div>
+                    </article>
+                ))}
+                </div>
+            )}
 
             {totalPages > 1 && (
               <div className="mt-16 mb-8 flex justify-center items-center gap-8">
@@ -433,26 +397,8 @@ export default function ProfilePage() {
       <NoteDetailModal 
         isOpen={!!selectedNote} 
         onClose={() => setSelectedNote(null)} 
-        note={selectedNote} 
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
-
-      <AddNoteModal
-        isOpen={!!editingNote}
-        onClose={() => setEditingNote(null)}
-        noteToEdit={editingNote}
-        onSuccess={fetchData}
-      />
-
-      <DeleteConfirmationModal
-        isOpen={!!deletingNote}
-        onClose={() => setDeletingNote(null)}
-        onConfirm={confirmDelete}
-      />
-      <ChangePasswordModal
-        isOpen={isChangePasswordModalOpen}
-        onClose={() => setIsChangePasswordModalOpen(false)}
+        note={selectedNote}
+        // No onEdit or onDelete passed
       />
     </>
   );

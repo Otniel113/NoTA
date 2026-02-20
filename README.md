@@ -30,6 +30,8 @@ NoTA is a simple sticky note full-stack application designed for a coding interv
 - **Responsive Design:** Optimized for both desktop and mobile views.
 - **Visibility Control:** Toggle note visibility between "Public" and "Members".
 - **Profile Management:** Securely change user password.
+- **Pagination** One page can see up to 12 notes
+- **See Other Profile** Can visit other user profile
 
 ### Backend
 - **Authentication:** Register, Login, Logout, and Profile management.
@@ -81,15 +83,11 @@ NoTA is a simple sticky note full-stack application designed for a coding interv
     npm install
     ```
 
-3.  Configure Environment Variables:
-    Create a `.env` file in the `backend` folder with the following:
-    ```env
-    PORT=5000
-    FRONTEND_URL=http://localhost:4000
-    MONGO_URI=your_mongodb_connection_string
-    JWT_SECRET=your_super_secret_key
+3.  Copy the .env.example file to your own .env file
+    ```bash
+    cp -n .env.example .env
     ```
-    or Copy it from .env.example file.
+    And adjust it to your own env.
 
 4.  Start the server:
     ```bash
@@ -103,8 +101,8 @@ NoTA is a simple sticky note full-stack application designed for a coding interv
 NoTA/
 ├── frontend/          # Next.js Frontend Application
 │   ├── app/           # App Router Pages & Layouts
-│   ├── components/    # Reusable UI Components (Modals, Cards)
-│   └── public/        # Static Assets
+│   ├── components/    # Reusable UI Components (Navbar, Modals, Cards)
+│   └── context/       # Authentication Context
 └── backend/           # NestJS Backend Application
     ├── src/
     │   ├── auth/      # Authentication Module (JWT, Guards)
